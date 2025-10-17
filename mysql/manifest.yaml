@@ -40,7 +40,7 @@ spec:
         - containerPort: 80
           name: web
         volumeMounts:
-        - name: www
+        - name: mysql
           mountPath: /var/lib/mysql
       volumes:
       - name: mysql
