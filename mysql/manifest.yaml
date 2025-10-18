@@ -1,15 +1,33 @@
-kind: PersistentVolumeClaim
 apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-headless
+  namespace: expense
+spec:
+  clusterIP: None
+  selector:
+    component: mysql
+    project: expense
+    tier: db 
+  ports:
+  - protocol: TCP
+    port: 3306 #service-port
+    targetPort: 3306 #target-port
+---
+apiVersion: v1
+kind: Service
 metadata:
   name: mysql
   namespace: expense
 spec:
-  storageClassName: "expense-ebs"
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 4Gi
+  selector:
+    component: mysql
+    project: expense
+    tier: db 
+  ports:
+  - protocol: TCP
+    port: 3306 #service-port
+    targetPort: 3306 #target-port
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -22,29 +40,29 @@ spec:
       # has to match .spec.template.metadata.labels
       component: mysql
       project: expense
-      tier: db
+      tier: db 
+  serviceName: "mysql-headless"
   replicas: 2 # by default is 1
-  minReadySeconds: 10 # by default is 0
   template:
     metadata:
       labels:
         # has to match .spec.selector.matchLabels
         component: mysql
         project: expense
-        tier: db 
+        tier: db
     spec:
       containers:
       - name: mysql
         image: avinbandela/mysql:v1.0
-        ports:
-        - containerPort: 80
-          name: web
         volumeMounts:
         - name: mysql
           mountPath: /var/lib/mysql
-      nodeSelector:
-        topology.kubernetes.io/zone: us-east-1a
-      volumes:
-      - name: mysql
-        persistentVolumeClaim:
-          claimName: mysql
+  volumeClaimTemplates:
+  - metadata:
+      name: mysql
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "expense-ebs"
+      resources:
+        requests:
+          storage: 1Gi
