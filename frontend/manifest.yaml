@@ -1,6 +1,6 @@
-kind: ConfigMap
 apiVersion: v1
-metadata: 
+kind: ConfigMap
+metadata:
   name: frontend
   namespace: expense
 data:
@@ -88,7 +88,7 @@ data:
             proxy_pass http://backend:8080/;
         }
 
-      }
+        }
 
     }
 
@@ -119,6 +119,22 @@ spec:
       containers:
       - name: frontend
         image: avinbandela/frontend:v1.0
+        volumeMounts:
+        - name: nginx-conf
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+          readOnly: true
+        # envFrom:
+        # - configMapRef:
+        #     name: frontend
+      volumes:
+      - name: nginx-conf
+        configMap:
+          name: frontend
+          items:
+          - key: nginx.conf
+            path: nginx.conf
+
 
 ---
 kind: Service
